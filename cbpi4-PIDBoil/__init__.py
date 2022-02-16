@@ -5,6 +5,14 @@ from cbpi.api import *
 import time
 import datetime
 
+##### Actor requirements #####
+import board
+from adafruit_motorkit import MotorKit
+###############################
+
+# create a default object, no changes to I2C address or frequency
+kit = MotorKit(i2c=board.I2C())
+
 @parameters([Property.Number(label = "P", configurable = True, description="P Value of PID"),
              Property.Number(label = "I", configurable = True, description="I Value of PID"),
              Property.Number(label = "D", configurable = True, description="D Value of PID"),
@@ -53,6 +61,8 @@ class PIDBoil(CBPiKettleLogic):
                 
                 if (heat_percent_old != heat_percent) or (heat_percent != current_kettle_power):
                     await self.actor_set_power(self.heater, heat_percent)
+                    kit.motor2.throttle = heat_percent
+                    kit.motor4.throttle = heat_percent
                     heat_percent_old= heat_percent
                 await asyncio.sleep(sampleTime)
 
@@ -63,6 +73,8 @@ class PIDBoil(CBPiKettleLogic):
         finally:
             self.running = False
             await self.actor_off(self.heater)
+            kit.motor2.throttle = 0
+            kit.motor4.throttle = 0
 
 # Based on Arduino PID Library
 # See https://github.com/br3ttb/Arduino-PID-Library
